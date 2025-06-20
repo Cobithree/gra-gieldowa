@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gra giełdowa</title>
+    <style>
+        body {
+            background-color: #111;
+			color: #f4f4f4;
+			font-family: Arial, sans-serif;
+			text-align: center;
+			margin: 60px 20px 20px 20px; /* większy górny margines */
+        }
+		
+
+        input, button {
+			font-size: 1em;
+			margin: 5px;
+			padding: 10px;
+			background-color: #222;
+			color: #f4f4f4;
+			border: 1px solid #555;
+		}
+		input::placeholder {
+			color: #999;
+		}
+		button:hover {
+			background-color: #333;
+			cursor: pointer;
+		}
+		h1 {
+			font-family: 'Playfair Display', serif;
+			font-size: 2.2em;
+			color: #f4f4f4;
+		}
+		@keyframes scrollTicker {
+			0%   { transform: translateX(100%); }
+			100% { transform: translateX(-100%); }
+		}
+		.allocation-table {
+			max-width: 350px;
+			margin: 0 auto 20px auto;
+			display: flex;
+			flex-direction: column;
+			gap: 12px;
+		}
+		.allocation-table .row {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
+		.allocation-table label {
+			flex: 1;
+			text-align: right;
+			margin-right: 10px;
+		}
+		.allocation-table input {
+			width: 60px;
+			text-align: center;
+		}
+		button:disabled {
+			opacity: 0.6;
+			cursor: not-allowed;
+		}
+		.cooldown {
+			background-color: #911; /* czerwony gdy zablokowany */
+		}
+		.ready {
+			background-color: #1a891a; /* zielony gdy gotowy */
+		}
+		.token-row {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			gap: 12px;
+		}
+		.token-control {
+			display: flex;
+			align-items: center;
+		}
+		.token-control input {
+			width: 50px;
+			text-align: center;
+			margin: 0 5px;
+			background-color: #222;
+			color: #f4f4f4;
+			border: 1px solid #555;
+		}
+		.token-control button {
+			width: 35px;
+			height: 35px;
+			font-size: 1.2em;
+			background-color: #444;
+			color: white;
+			border: 1px solid #555;
+		}
+		.token-control button:hover {
+			background-color: #666;
+		}
+		
+		
+		
+    </style>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="ticker" style="position: fixed; top: 0; width: 100%; overflow: hidden; background-color: #000; padding: 6px 0; z-index: 1000;">
+	<div id="tickerContent" style="display: inline-block; white-space: nowrap; animation: scrollTicker 7s linear infinite; font-family: monospace; font-size: 1em;"></div>
+	</div>
+	<div style="display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap;">
+    <img src="logo-mensa.jpg" alt="Logo MENSA" style="height: 60px;" />
+    <h1 style="margin: 0;">Inwestycyjne Manewry<br>Mensańska gra giełdowa 2025</h1>
+	</div>
+    <div id="setup">
+        <p>Podaj swój nick:</p>
+        <input type="text" id="nickname" placeholder="Twój nick" required />
+        <button id="startGame">Rozpocznij grę</button>
+    </div>
+
+    <div id="gameArea" style="display: none;">
+        <h2>Numer zdarzenia: <span id="eventNumber">1</span></h2>
+        <p>Przypisz swoje tokeny (do 3 w sumie):</p>
+		
+       <div class="allocation-table">
+			<div class="token-row">
+				<label for="company1">CD Projekt:</label>
+				<div class="token-control">
+					<button type="button" onclick="adjustTokens('company1', -1)">−</button>
+					<input type="number" id="company1" value="0" min="0" max="3" readonly />
+					<button type="button" onclick="adjustTokens('company1', 1)">+</button>
+				</div>
+			</div>
+			<div class="token-row">
+				<label for="company2">ML System:</label>
+				<div class="token-control">
+					<button type="button" onclick="adjustTokens('company2', -1)">−</button>
+					<input type="number" id="company2" value="0" min="0" max="3" readonly />
+					<button type="button" onclick="adjustTokens('company2', 1)">+</button>
+				</div>
+			</div>
+			<div class="token-row">
+				<label for="company3">PZU:</label>
+				<div class="token-control">
+					<button type="button" onclick="adjustTokens('company3', -1)">−</button>
+					<input type="number" id="company3" value="0" min="0" max="3" readonly />
+					<button type="button" onclick="adjustTokens('company3', 1)">+</button>
+				</div>
+			</div>
+		</div>
+		
+		
+        <!-- Okienko z wartością portfela -->
+		<p><strong>Wartość portfela:</strong> <span id="portfolioValue">30000</span> zł</p>
+        <button id="saveAllocation">Zapisz alokację</button>
+		<span id="allocationCooldown" style="margin-left: 10px; font-weight: bold;"></span>
+		<!-- Dodajemy przycisk do wyświetlenia zapisanych alokacji -->
+		<button id="showAllocations">Pokaż zapisane alokacje</button>
+		<p id="allocationsOutput"></p>
+        <p id="output"></p>
+    </div>
+
+   <script>
+    // Dane gry przechowywane lokalnie
+    let gameData = {
+        nickname: '',
+        eventNumber: 1,
+        totalPoints: 0,
+        allocations: [] // Pusta lista alokacji
+    };
+	
+	function adjustTokens(id, delta) {
+			const input = document.getElementById(id);
+			const current = parseInt(input.value) || 0;
+			const newValue = Math.max(0, Math.min(3, current + delta));
+			input.value = newValue;
+		}
+
+    // Funkcja ustawiająca domyślne wartości alokacji
+    function updateFormWithLastAllocation() {
+        const lastAllocation = gameData.allocations[gameData.allocations.length - 1];
+        document.querySelector('#company1').value = lastAllocation ? lastAllocation.company1 : 0;
+        document.querySelector('#company2').value = lastAllocation ? lastAllocation.company2 : 0;
+        document.querySelector('#company3').value = lastAllocation ? lastAllocation.company3 : 0;
+    }
+
+    // Funkcja aktualizująca wartość portfela
+    function updatePortfolioValue() {
+        const newPortfolioValue = 30000 + gameData.totalPoints;
+        document.querySelector('#portfolioValue').textContent = newPortfolioValue.toFixed(2);
+    }
+
+    // Funkcja obliczająca wynik dla danej rundy
+    function calculateRoundPoints(allocation, roundNumber) {
+        const tokenValue = allocation.tokenValue; // Korzystanie ze zapisanej wartości tokenu
+        console.log(`Wartość tokenu w rundzie ${roundNumber}: ${tokenValue}`); // Log wartości tokenu
+        const roundChange = priceChanges[roundNumber - 1]; // Pobierz wartości zmiany dla rundy
+
+        const pointsCompany1 = allocation.company1 * roundChange.company1 * tokenValue / 100;
+        const pointsCompany2 = allocation.company2 * roundChange.company2 * tokenValue / 100;
+        const pointsCompany3 = allocation.company3 * roundChange.company3 * tokenValue / 100;
+
+        return {
+            roundPoints: Math.round(pointsCompany1 + pointsCompany2 + pointsCompany3), // Zaokrąglenie całkowitego wyniku rundy
+            details: {
+                company1: Math.round(pointsCompany1),
+                company2: Math.round(pointsCompany2),
+                company3: Math.round(pointsCompany3),
+            }
+        };
+    }
+
+    // Funkcja wysyłająca dane do backendu
+async function sendToBackend(type) {
+    const url = "/.netlify/functions/submitResult";
+    const portfolioValue = 30000 + gameData.totalPoints;
+    const returnPercent = ((portfolioValue - 30000) / 30000) * 100;
+
+    const data = {
+        nick: gameData.nickname,
+        resultType: type,
+        portfolioValue: Math.round(portfolioValue),
+        returnPercent: parseFloat(returnPercent.toFixed(2))
+    };
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+        console.log("Odpowiedź serwera:", result);
+    } catch (error) {
+        console.error("Błąd wysyłki:", error);
+    }
+}
+
+
+function updateTicker(roundNumber) {
+    const changes = priceChanges[roundNumber - 1];
+    if (!changes) return;
+
+    function format(symbol, change) {
+        const color = change > 0 ? 'limegreen' : change < 0 ? 'red' : 'white';
+        const sign = change > 0 ? '+' : '';
+        return `<span style="color: ${color}; margin-right: 30px;">${symbol}: ${sign}${change.toFixed(2)}%</span>`;
+    }
+
+    const content = format("CDR", changes.company1) +
+                    format("MLS", changes.company2) +
+                    format("PZU", changes.company3);
+
+    document.getElementById("tickerContent").innerHTML = content;
+}
+
+    // Rozpoczynanie gry
+    document.querySelector('#startGame').addEventListener('click', function() {
+        const nicknameInput = document.querySelector('#nickname').value.trim();
+        if (nicknameInput) {
+            gameData.nickname = nicknameInput;
+            document.querySelector('#setup').style.display = 'none';
+            document.querySelector('#gameArea').style.display = 'block';
+
+            // Ustawienie domyślnych wartości na początku gry
+            updateFormWithLastAllocation();
+        } else {
+            alert('Proszę podać swój nick!');
+        }
+    });
+
+    // Zapis alokacji dla bieżącego zdarzenia
+    document.querySelector('#saveAllocation').addEventListener('click', function() {
+        const company1 = parseInt(document.querySelector('#company1').value) || 0;
+        const company2 = parseInt(document.querySelector('#company2').value) || 0;
+        const company3 = parseInt(document.querySelector('#company3').value) || 0;
+
+        if (company1 + company2 + company3 > 3) {
+            document.querySelector('#output').textContent = "Błąd: suma tokenów nie może przekroczyć 3!";
+            return;
+        }
+
+        // Obliczenie i zapis wartości tokenu
+        const tokenValue = Math.round((30000 + gameData.totalPoints) / 3);
+
+        // Zapis alokacji i przejście do następnego zdarzenia
+        gameData.allocations.push({ 
+            event: gameData.eventNumber, 
+            company1, 
+            company2, 
+            company3,
+            tokenValue // Zapisujemy wartość tokenu dla tej rundy
+        });
+
+        const roundResults = calculateRoundPoints(gameData.allocations[gameData.allocations.length - 1], gameData.eventNumber);
+        gameData.totalPoints += roundResults.roundPoints; // Aktualizacja całkowitego wyniku
+		updateTicker(gameData.eventNumber);
+		
+			
+		
+		//cooldown
+		function startCooldown(seconds) {
+		const button = document.getElementById('saveAllocation');
+		const label = document.getElementById('allocationCooldown')
+		button.disabled = true;
+		button.classList.remove('ready');
+		button.classList.add('cooldown');;
+		let remaining = seconds;
+
+		
+		label.textContent = `Odblokowanie za: ${remaining}s`;
+
+		const interval = setInterval(() => {
+			remaining--;
+			label.textContent = `Odblokowanie za: ${remaining}s`;
+			if (remaining <= 0) {
+				clearInterval(interval);
+				button.disabled = false;
+				label.textContent = '';
+				button.classList.remove('cooldown');
+				button.classList.add('ready');
+			}
+		}, 1000);
+	}
+
+		
+		
+		
+
+        // Wysyłanie danych do backendu po 5 i 10 rundzie
+        if (gameData.eventNumber === 5) {
+            sendToBackend("half-time");
+        }
+        if (gameData.eventNumber === 10) {
+            sendToBackend("final");
+        }
+
+        gameData.eventNumber += 1;
+
+        // Aktualizacja numeru zdarzenia, wartości portfela i formularza
+        document.querySelector('#eventNumber').textContent = gameData.eventNumber;
+        updatePortfolioValue();
+        updateFormWithLastAllocation();
+        document.querySelector('#output').textContent = "Alokacja zapisana!";
+		startCooldown(2); // 30 sekund blokady
+    });
+
+
+
+    // Wyświetlanie zapisanych alokacji i wyników
+	document.querySelector('#showAllocations').addEventListener('click', function() {
+		const output = gameData.allocations.map(allocation => {
+			const results = calculateRoundPoints(allocation, allocation.event);
+			return `Zdarzenie ${allocation.event}: 
+					Wartość tokenu: ${allocation.tokenValue} zł<br>
+					CD Projekt - ${allocation.company1}, Wynik: ${results.details.company1.toFixed(2)} zł<br>
+					ML System - ${allocation.company2}, Wynik: ${results.details.company2.toFixed(2)} zł<br>
+					PZU - ${allocation.company3}, Wynik: ${results.details.company3.toFixed(2)} zł<br>
+					Wynik rundy: ${results.roundPoints.toFixed(2)} zł`;
+		}).join('<br><br>');
+
+    document.querySelector('#allocationsOutput').innerHTML = output || "Brak zapisanych alokacji.";
+});
+
+   
+    // Wartości zmiennych procentowych (losowe dane dla testów)
+    const priceChanges = [
+        { company1: -2.97, company2: -1.25, company3: -7.95 },
+        { company1: -7.2, company2: 0.54, company3: 4.35 },
+        { company1: -3.16, company2: 0.99, company3: -1.32 },
+        { company1: -4.38, company2: 23.34, company3: 9.78 },
+        { company1: 5.06, company2: 4.32, company3: 6.33 },
+        { company1: 39.59, company2: -3.59, company3: 6.06 },
+        { company1: -4.26, company2: -4.58, company3: 13.68 },
+        { company1: -5.56, company2: -1.35, company3: 1.71 },
+        { company1: -15.84, company2: -4.26, company3: -2.4 },
+        { company1: -2.32, company2: -12.06, company3: 17.41 },
+        { company1: 0.78, company2: -22.74, company3: 2.39 },
+        { company1: -1.07, company2: -2.92, company3: -0.29 },
+        { company1: 21.75, company2: 0.96, company3: 5.9 },
+        { company1: 94.53, company2: -64.39, company3: 37.48 },
+
+    ];
+	
+window.addEventListener('beforeunload', function (e) {
+    e.preventDefault(); // standard
+    e.returnValue = ''; // dla niektórych przeglądarek
+    return ''; // dla starszych przeglądarek
+});
+
+document.getElementById('saveAllocation').classList.add('ready');
+
+
+</script>
+
+
+
+</body>
+</html>
