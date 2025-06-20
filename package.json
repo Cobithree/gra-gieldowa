@@ -1,0 +1,11 @@
+{
+  "name": "gra-gieldowa",
+  "version": "1.0.0",
+  "description": "Mensańska gra giełdowa z funkcją backendową",
+  "type": "module",
+  "main": "index.html",
+  "scripts": {},
+  "dependencies": {
+    "pg": "^8.11.0"
+  }
+}
