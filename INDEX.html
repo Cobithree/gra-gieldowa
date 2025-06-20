@@ -168,7 +168,21 @@
         totalPoints: 0,
         allocations: [] // Pusta lista alokacji
     };
-	
+	function showEndMessage(message) {
+    const div = document.createElement("div");
+    div.textContent = message;
+    div.style.position = "fixed";
+    div.style.bottom = "20px";
+    div.style.right = "20px";
+    div.style.padding = "12px 20px";
+    div.style.backgroundColor = "#f0f0f0";
+    div.style.border = "1px solid #ccc";
+    div.style.borderRadius = "8px";
+    div.style.fontSize = "16px";
+    div.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
+    div.style.zIndex = "1000";
+    document.body.appendChild(div);
+}
 	function adjustTokens(id, delta) {
 			const input = document.getElementById(id);
 			const current = parseInt(input.value) || 0;
@@ -337,6 +351,12 @@ function updateTicker(roundNumber) {
 		}
 		if (gameData.eventNumber === 14) {
 			sendToBackend("end-game");
+			
+			
+			const finalValue = 30000 + gameData.totalPoints;
+			const message = `🎉 Gratulacje ${gameData.nickname}! Twój wynik to ${finalValue} zł`;
+
+			showEndMessage(message);
 		}
 
         gameData.eventNumber += 1;
@@ -393,6 +413,26 @@ window.addEventListener('beforeunload', function (e) {
 });
 
 document.getElementById('saveAllocation').classList.add('ready');
+
+function showEndMessage(message) {
+    const div = document.createElement("div");
+    div.textContent = message;
+    div.style.position = "fixed";
+    div.style.top = "40%";
+    div.style.left = "50%";
+    div.style.transform = "translate(-50%, -50%)";
+    div.style.padding = "20px 30px";
+    div.style.backgroundColor = "#fff";
+    div.style.border = "2px solid #333";
+    div.style.borderRadius = "12px";
+    div.style.fontSize = "20px";
+    div.style.fontWeight = "bold";
+    div.style.boxShadow = "0 8px 24px rgba(0,0,0,0.2)";
+    div.style.zIndex = "10000";
+    div.style.textAlign = "center";
+    div.style.maxWidth = "80%";
+    document.body.appendChild(div);
+}
 
 
 </script>
