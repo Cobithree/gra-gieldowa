@@ -105,6 +105,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
 </head>
 <body>
+	<div id="nicknameDisplay" style="position: absolute; top: 10px; right: 20px; font-size: 14px; color: #444;"></div>
     <div id="ticker" style="position: fixed; top: 0; width: 100%; overflow: hidden; background-color: #000; padding: 6px 0; z-index: 1000;">
 	<div id="tickerContent" style="display: inline-block; white-space: nowrap; animation: scrollTicker 7s linear infinite; font-family: monospace; font-size: 1em;"></div>
 	</div>
@@ -274,6 +275,7 @@ function updateTicker(roundNumber) {
         const nicknameInput = document.querySelector('#nickname').value.trim();
         if (nicknameInput) {
             gameData.nickname = nicknameInput;
+			document.getElementById("nicknameDisplay").textContent = `Gracz: ${gameData.nickname}`;
             document.querySelector('#setup').style.display = 'none';
             document.querySelector('#gameArea').style.display = 'block';
 
@@ -366,7 +368,7 @@ function updateTicker(roundNumber) {
         updatePortfolioValue();
         updateFormWithLastAllocation();
         document.querySelector('#output').textContent = "Alokacja zapisana!";
-		startCooldown(2); // 30 sekund blokady
+		startCooldown(30); // 30 sekund blokady
     });
 
 
@@ -421,16 +423,18 @@ function showEndMessage(message) {
     div.style.top = "40%";
     div.style.left = "50%";
     div.style.transform = "translate(-50%, -50%)";
-    div.style.padding = "20px 30px";
-    div.style.backgroundColor = "#fff";
-    div.style.border = "2px solid #333";
+    div.style.padding = "24px 32px";
+    div.style.backgroundColor = "#fefefe"; // jasne tło
+    div.style.color = "#222"; // ciemna czcionka
+    div.style.border = "2px solid #444";
     div.style.borderRadius = "12px";
     div.style.fontSize = "20px";
-    div.style.fontWeight = "bold";
-    div.style.boxShadow = "0 8px 24px rgba(0,0,0,0.2)";
+    div.style.fontWeight = "600";
+    div.style.boxShadow = "0 8px 24px rgba(0, 0, 0, 0.15)";
     div.style.zIndex = "10000";
     div.style.textAlign = "center";
-    div.style.maxWidth = "80%";
+    div.style.maxWidth = "90%";
+    div.style.fontFamily = "sans-serif";
     document.body.appendChild(div);
 }
 
