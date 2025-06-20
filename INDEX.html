@@ -330,11 +330,14 @@ function updateTicker(roundNumber) {
 
         // Wysyłanie danych do backendu po 5 i 10 rundzie
         if (gameData.eventNumber === 5) {
-            sendToBackend("half-time");
-        }
-        if (gameData.eventNumber === 10) {
-            sendToBackend("final");
-        }
+			sendToBackend("early-game");
+		}
+		if (gameData.eventNumber === 10) {
+			sendToBackend("mid-game");
+		}
+		if (gameData.eventNumber === 15) {
+			sendToBackend("end-game");
+		}
 
         gameData.eventNumber += 1;
 
